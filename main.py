@@ -78,7 +78,7 @@ async def on_message(message):  # Runs the code whenever a message is sent in th
                     message_text += f"<@{user_id}>**: {value}**\n"
 
                 # Create the embed
-                task_embed = discord.Embed(title='Tasks Completed This Week', description=message_text, color=0x2f3136)
+                task_embed = discord.Embed(title=Tasks Completed This Week'', description=message_text, color=0x2f3136)
 
                 # Send the embed
                 await message.channel.send(content=None, embed=task_embed)
