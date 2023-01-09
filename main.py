@@ -3,10 +3,11 @@ from discord.ext import commands
 import asyncio
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
+import time
 
 
 # ---------- USER CONFIGURABLE SECTION -----------------
-token = ''  # Stores the bot's token. Used to pass the bot's token into bot.run in order to run the bot.
+token = 'MTA2MDcyNTkyOTc3NDY5MDM0NA.GY55i2.e1tx60xC2ZkzQ7RM76UnRH_J0Ldk4-0H34CVYE'  # Stores the bot's token. Used to pass the bot's token into bot.run in order to run the bot.
 bot = commands.Bot(command_prefix='', intents=discord.Intents.all())  # Changing the bot's intents will break functionality! Only touch this if you know what you're doing!
 bot.Prefix = '!'  # Defines the bot's command prefix.
 # ---------- END OF USER CONFIGURABLE SECTION ----------
@@ -94,6 +95,9 @@ async def on_message(message):  # Runs the code whenever a message is sent in th
 
     if args[0] == 'bruh':
         await message.channel.send('<:bruh_stone:1059119664543825950>')
+
+    if args[0] == bot.Prefix + 'ping':
+            await message.channel.send(f'**Latency:** {bot.latency} Milliseconds')
 
 
 def reset_values():
