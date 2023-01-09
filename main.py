@@ -92,6 +92,10 @@ async def on_message(message):  # Runs the code whenever a message is sent in th
         help_embed = discord.Embed(title='Commands', description='**!help - Displays this help message.\n\n!taskdone - Adds +1 to your amount of completed tasks.\n\n!viewtasks - Displays a list of every developer and their number of completed tasks.**', color=0x2f3136)
         await message.channel.send(content=None, embed=help_embed)
 
+    if args[0] == bot.Prefix + 'bruh':
+        await message.channel.send('<:bruh_stone:1059119664543825950>')
+
+
 def reset_values():
     # Open the database file in read mode
     with open('database.json', 'r') as f:
