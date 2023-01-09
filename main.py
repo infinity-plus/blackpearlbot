@@ -97,8 +97,10 @@ async def on_message(message):  # Runs the code whenever a message is sent in th
         await message.channel.send('<:bruh_stone:1059119664543825950>')
 
     if args[0] == bot.Prefix + 'ping':
-            await message.channel.send(f'**Latency:** {bot.latency} Milliseconds')
+        await message.channel.send(f'**Latency:** {bot.latency} Milliseconds')
 
+    if args[0] == "I'm horny" or "Im horny":
+        await message.channel.send('https://tenor.com/view/vorzek-vorzneck-oglg-og-lol-gang-gif-24901093')
 
 def reset_values():
     # Open the database file in read mode
