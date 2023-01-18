@@ -30,7 +30,9 @@ async def ping(interaction: discord.Interaction):
 
 @bot.tree.command(name='clayton', description= 'Face reveal of Terrence.')
 async def clayton(interaction: discord.Interaction):
-    await interaction.response.send_message(f'https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg')
+    await interaction.response.send_message(
+        'https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg'
+    )
 
 @bot.tree.command(name='taskdone', description ='Adds +1 to your amount of completed tasks.')
 async def taskdone(interaction: discord.Interaction):
@@ -58,7 +60,7 @@ async def taskdone(interaction: discord.Interaction):
                     json.dump(data, f, indent=2)
 
             await interaction.response.send_message('**Task amount updated!** :white_check_mark:')
-        elif juniorDevs not in interaction.user.roles or seniorDevs not in interaction.user.roles or leadDevs not in interaction.user.roles or projectManagers not in interaction.user.roles:
+        else:
             await interaction.response.send_message('**You do not have permission to run this command!** :x:')
 
 @bot.tree.command(name='viewtasks', description = 'Displays a list of every developer and their number of completed tasks.')
@@ -75,19 +77,19 @@ async def viewtasks(interaction: discord.Interaction):
             data = json.load(database)
 
         if juniorDevs in interaction.user.roles or seniorDevs in interaction.user.roles or leadDevs in interaction.user.roles or projectManagers in interaction.user.roles:
-            # Initialize the message
-            message_text = ""
-            # Build the message using string formatting
-            for user_id, value in sorted(data.items(), key=lambda x: x[1], reverse=True):
-                message_text += f"<@{user_id}>**: {value}**\n"
-
+            message_text = "".join(
+                f"<@{user_id}>**: {value}**\n"
+                for user_id, value in sorted(
+                    data.items(), key=lambda x: x[1], reverse=True
+                )
+            )
             # Create the embed
             task_embed = discord.Embed(title='Tasks Completed This Week', description=message_text, color=0x2f3136)
 
             # Send the embed
             await interaction.response.send_message(embed=task_embed)
 
-        elif juniorDevs not in interaction.user.roles or seniorDevs not in interaction.user.roles or leadDevs not in interaction.user.roles or projectManagers not in interaction.user.roles:
+        else:
             # The message author does not have one of the roles
             #Don't perform the code actions
             await interaction.response.send_message('**You do not have permission to run this command!** :x:')
