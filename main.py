@@ -132,7 +132,7 @@ async def on_message(message):
         await message.channel.send('https://tenor.com/view/vorzek-vorzneck-oglg-og-lol-gang-gif-24901093')
         
     elif args[0] == 'moo':
-        await message.channel.send('https://tenor.com/view/holy-cow-holy-cow-gif-25938150%27)
+        await message.channel.send('https://tenor.com/view/holy-cow-holy-cow-gif-25938150')
 
 
 bot.run('')
