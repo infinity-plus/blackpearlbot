@@ -1,9 +1,6 @@
-import asyncio
 import json
-import time
 
 import discord
-import discord.ext
 from apscheduler.schedulers.background import BackgroundScheduler
 from discord.ext import commands
 
