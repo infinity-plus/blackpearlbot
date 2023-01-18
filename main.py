@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 import discord
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -208,4 +209,4 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    bot.run("")
+    bot.run(os.getenv("TOKEN", ""))
