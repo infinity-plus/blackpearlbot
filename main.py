@@ -14,14 +14,6 @@ async def on_ready():
     print(f"Synced {len(synced)} command(s)")
 
 
-# @bot.tree.command(name='help', description='Displays a list of all available commands.')
-# async def help(interaction: discord.Interaction):
-#    help_embed = discord.Embed(title='Commands',
-#                               description='``!help``\n**Displays this help message.**\n\n``!taskdone``\n **Adds +1 to your amount of completed tasks.**\n\n``!viewtasks``\n**Displays a list of every developer and their number of completed tasks.**',
-#                               color=0x2f3136)
-#    await interaction.response.send_message(embed=help_embed)
-
-
 @bot.tree.command(name="ping", description="Displays the bot's latency.")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message(
@@ -32,7 +24,7 @@ async def ping(interaction: discord.Interaction):
 @bot.tree.command(name="clayton", description="Face reveal of Terrence.")
 async def clayton(interaction: discord.Interaction):
     await interaction.response.send_message(
-        "https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg"
+        "https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg"  # noqa: E501
     )
 
 
@@ -40,42 +32,42 @@ async def clayton(interaction: discord.Interaction):
     name="taskdone", description="Adds +1 to your amount of completed tasks."
 )
 async def taskdone(interaction: discord.Interaction):
-    authorID = str(interaction.user.id)
+    author_id = str(interaction.user.id)
     for guild in bot.guilds:
-        juniorDevs = discord.utils.get(
+        junior_devs = discord.utils.get(
             guild.roles,
             name="Junior Developers",
         )
-        seniorDevs = discord.utils.get(
+        senior_devs = discord.utils.get(
             guild.roles,
             name="Senior Developers",
         )
-        leadDevs = discord.utils.get(
+        lead_devs = discord.utils.get(
             guild.roles,
             name="Lead Developers",
         )
-        projectManagers = discord.utils.get(
+        project_managers = discord.utils.get(
             guild.roles,
             name="Project Managers",
         )
 
         if (
-            juniorDevs in interaction.user.roles
-            or seniorDevs in interaction.user.roles
-            or leadDevs in interaction.user.roles
-            or projectManagers in interaction.user.roles
+            junior_devs in interaction.user.roles
+            or senior_devs in interaction.user.roles
+            or lead_devs in interaction.user.roles
+            or project_managers in interaction.user.roles
         ):
             with open("database.json", "r") as f:
                 data = json.load(f)
 
-            if authorID in data.keys():
-                data[authorID] += 1
+            if author_id in data.keys():
+                data[author_id] += 1
 
                 with open("database.json", "w") as f:
                     json.dump(data, f, indent=2)
 
-            elif authorID not in data.keys():
-                data[authorID] = 1
+            elif author_id not in data.keys():
+                data[author_id] = 1
 
                 with open("database.json", "w") as f:
                     json.dump(data, f, indent=2)
@@ -91,23 +83,24 @@ async def taskdone(interaction: discord.Interaction):
 
 @bot.tree.command(
     name="viewtasks",
-    description="Displays a list of every developer and their number of completed tasks.",
+    description="Displays a list of every developer"
+    " and their number of completed tasks.",
 )
 async def viewtasks(interaction: discord.Interaction):
     for guild in bot.guilds:
-        juniorDevs = discord.utils.get(
+        junior_devs = discord.utils.get(
             guild.roles,
             name="Junior Developers",
         )
-        seniorDevs = discord.utils.get(
+        senior_devs = discord.utils.get(
             guild.roles,
             name="Senior Developers",
         )
-        leadDevs = discord.utils.get(
+        lead_devs = discord.utils.get(
             guild.roles,
             name="Lead Developers",
         )
-        projectManagers = discord.utils.get(
+        project_managers = discord.utils.get(
             guild.roles,
             name="Project Managers",
         )
@@ -118,10 +111,10 @@ async def viewtasks(interaction: discord.Interaction):
             data = json.load(database)
 
         if (
-            juniorDevs in interaction.user.roles
-            or seniorDevs in interaction.user.roles
-            or leadDevs in interaction.user.roles
-            or projectManagers in interaction.user.roles
+            junior_devs in interaction.user.roles
+            or senior_devs in interaction.user.roles
+            or lead_devs in interaction.user.roles
+            or project_managers in interaction.user.roles
         ):
             message_text = "".join(
                 f"<@{user_id}>**: {value}**\n"
@@ -181,7 +174,7 @@ async def on_message(message):
 
     elif args[0] in ("i'm", "im", "I am") and " ".join(args[1:]) == "horny":
         await message.channel.send(
-            "https://tenor.com/view/vorzek-vorzneck-oglg-og-lol-gang-gif-24901093"
+            "https://tenor.com/view/vorzek-vorzneck-oglg-og-lol-gang-gif-24901093"  # noqa: E501
         )
 
     elif args[0] == "moo":
