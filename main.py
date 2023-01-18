@@ -29,7 +29,8 @@ async def clayton(interaction: discord.Interaction):
 
 
 @bot.tree.command(
-    name="taskdone", description="Adds +1 to your amount of completed tasks."
+    name="taskdone",
+    description="Adds +1 to your amount of completed tasks.",
 )
 async def taskdone(interaction: discord.Interaction):
     author_id = str(interaction.user.id)
@@ -50,6 +51,9 @@ async def taskdone(interaction: discord.Interaction):
             guild.roles,
             name="Project Managers",
         )
+
+        if not isinstance(interaction.user, discord.Member):
+            return
 
         if (
             junior_devs in interaction.user.roles
@@ -87,6 +91,8 @@ async def taskdone(interaction: discord.Interaction):
     " and their number of completed tasks.",
 )
 async def viewtasks(interaction: discord.Interaction):
+    if not isinstance(interaction.user, discord.Member):
+        return
     for guild in bot.guilds:
         junior_devs = discord.utils.get(
             guild.roles,
