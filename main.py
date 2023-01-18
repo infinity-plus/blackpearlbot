@@ -16,22 +16,25 @@ async def on_ready():
     print(f'Synced {len(synced)} command(s)')
 
 
-@bot.tree.command(name='help', description='Displays a list of all available commands.')
-async def help(interaction: discord.Interaction):
-    help_embed = discord.Embed(title='Commands',
-                               description='``!help``\n**Displays this help message.**\n\n``!taskdone``\n **Adds +1 to your amount of completed tasks.**\n\n``!viewtasks``\n**Displays a list of every developer and their number of completed tasks.**',
-                               color=0x2f3136)
-    await interaction.response.send_message(embed=help_embed)
+#@bot.tree.command(name='help', description='Displays a list of all available commands.')
+#async def help(interaction: discord.Interaction):
+#    help_embed = discord.Embed(title='Commands',
+#                               description='``!help``\n**Displays this help message.**\n\n``!taskdone``\n **Adds +1 to your amount of completed tasks.**\n\n``!viewtasks``\n**Displays a list of every developer and their number of completed tasks.**',
+#                               color=0x2f3136)
+#    await interaction.response.send_message(embed=help_embed)
 
 
-@bot.tree.command(name='ping', description= 'Shows latency.')
+@bot.tree.command(name='ping', description="Displays the bot's latency.")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message(f'**Latency:** {bot.latency} Milliseconds')
 
-@bot.tree.command(name='clay', description= 'Face reveal of Terrence.')
-async def ping(interaction: discord.Interaction):
+@bot.tree.command(name='clayton', description= 'Face reveal of Terrence.')
+async def clayton(interaction: discord.Interaction):
     await interaction.response.send_message(f'https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg')
-
+    
+@bot.tree.command(name='moo', description='Moo.')
+async def moo(interaction: discord.Interaction):
+    await interaction.response.send_message('https://tenor.com/view/holy-cow-holy-cow-gif-25938150')
 
 @bot.tree.command(name='taskdone', description ='Adds +1 to your amount of completed tasks.')
 async def taskdone(interaction: discord.Interaction):
