@@ -31,10 +31,6 @@ async def ping(interaction: discord.Interaction):
 @bot.tree.command(name='clayton', description= 'Face reveal of Terrence.')
 async def clayton(interaction: discord.Interaction):
     await interaction.response.send_message(f'https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg')
-    
-@bot.tree.command(name='moo', description='Moo.')
-async def moo(interaction: discord.Interaction):
-    await interaction.response.send_message('https://tenor.com/view/holy-cow-holy-cow-gif-25938150')
 
 @bot.tree.command(name='taskdone', description ='Adds +1 to your amount of completed tasks.')
 async def taskdone(interaction: discord.Interaction):
@@ -134,6 +130,9 @@ async def on_message(message):
 
     elif args[0] == "im" and " ".join(args[1:]) == "horny":
         await message.channel.send('https://tenor.com/view/vorzek-vorzneck-oglg-og-lol-gang-gif-24901093')
+        
+    elif args[0] == 'moo':
+        await message.channel.send('https://tenor.com/view/holy-cow-holy-cow-gif-25938150%27)
 
 
 bot.run('')
