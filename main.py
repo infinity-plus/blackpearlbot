@@ -1,4 +1,5 @@
 import json
+import logging
 
 import discord
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -189,4 +190,22 @@ async def on_message(message):
         )
 
 
-bot.run("")
+if __name__ == "__main__":
+
+    logger = logging.getLogger("discord")
+    logger.setLevel(logging.INFO)
+    handler = logging.FileHandler(
+        filename="bot.log",
+        encoding="utf-8",
+        mode="w",
+    )
+    dt_fmt = "%Y-%m-%d %H:%M:%S"
+    formatter = logging.Formatter(
+        "[{asctime}] [{levelname:<8}] {name}: {message}",
+        dt_fmt,
+        style="{",
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    bot.run("")
