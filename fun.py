@@ -30,7 +30,7 @@ class Fun(commands.Cog):
 
         args = message.content.split(" ")
         if args[0] == "bruh":
-            await message.channel.send("<:moyai:>")
+            await message.channel.send(":moyai:")
         elif (
             args[0] in ("i'm", "im", "i am") and " ".join(args[1:]) == "horny"
         ):  # noqa: E501
