@@ -6,139 +6,24 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from discord import Embed, Intents, Interaction, Member, utils
 from discord.ext import commands
 
-intents = Intents.all()
-bot = commands.Bot(command_prefix="/", intents=Intents.all())
 
-
-@bot.event
-async def on_ready():
-    synced = await bot.tree.sync()
-    print(f"Synced {len(synced)} command(s)")
-
-
-@bot.tree.command(name="ping", description="Displays the bot's latency.")
-async def ping(interaction: Interaction):
-    await interaction.response.send_message(
-        f"**Latency:** {bot.latency} Milliseconds",
-    )
-
-
-@bot.tree.command(
-    name="taskdone",
-    description="Adds +1 to your amount of completed tasks.",
-)
-async def taskdone(interaction: Interaction):
-    author_id = str(interaction.user.id)
-    for guild in bot.guilds:
-        junior_devs = utils.get(
-            guild.roles,
-            name="Junior Developers",
-        )
-        senior_devs = utils.get(
-            guild.roles,
-            name="Senior Developers",
-        )
-        lead_devs = utils.get(
-            guild.roles,
-            name="Lead Developers",
-        )
-        project_managers = utils.get(
-            guild.roles,
-            name="Project Managers",
+class BlackPearlBot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix="/",
+            intents=Intents.all(),
         )
 
-        if not isinstance(interaction.user, Member):
-            return
+    # the method to override in order to run whatever you need
+    # before your bot starts
+    async def setup_hook(self):
+        await self.load_extension("fun")
+        await self.load_extension("status")
+        await self.load_extension("tasks")
 
-        if (
-            junior_devs in interaction.user.roles
-            or senior_devs in interaction.user.roles
-            or lead_devs in interaction.user.roles
-            or project_managers in interaction.user.roles
-        ):
-            with open("database.json", "r") as f:
-                data = json.load(f)
-
-            if author_id in data.keys():
-                data[author_id] += 1
-
-                with open("database.json", "w") as f:
-                    json.dump(data, f, indent=2)
-
-            elif author_id not in data.keys():
-                data[author_id] = 1
-
-                with open("database.json", "w") as f:
-                    json.dump(data, f, indent=2)
-
-            await interaction.response.send_message(
-                "**Task amount updated!** :white_check_mark:"
-            )
-        else:
-            await interaction.response.send_message(
-                "**You do not have permission to run this command!** :x:"
-            )
-
-
-@bot.tree.command(
-    name="viewtasks",
-    description="Displays a list of every developer"
-    " and their number of completed tasks.",
-)
-async def viewtasks(interaction: Interaction):
-    if not isinstance(interaction.user, Member):
-        return
-    for guild in bot.guilds:
-        junior_devs = utils.get(
-            guild.roles,
-            name="Junior Developers",
-        )
-        senior_devs = utils.get(
-            guild.roles,
-            name="Senior Developers",
-        )
-        lead_devs = utils.get(
-            guild.roles,
-            name="Lead Developers",
-        )
-        project_managers = utils.get(
-            guild.roles,
-            name="Project Managers",
-        )
-
-        # Open the database file in read mode
-        with open("database.json", "r") as database:
-            # Load the contents of the file into a dictionary
-            data = json.load(database)
-
-        if (
-            junior_devs in interaction.user.roles
-            or senior_devs in interaction.user.roles
-            or lead_devs in interaction.user.roles
-            or project_managers in interaction.user.roles
-        ):
-            message_text = "".join(
-                f"<@{user_id}>**: {value}**\n"
-                for user_id, value in sorted(
-                    data.items(), key=lambda x: x[1], reverse=True
-                )
-            )
-            # Create the embed
-            task_embed = Embed(
-                title="Tasks Completed This Week",
-                description=message_text,
-                color=0x2F3136,
-            )
-
-            # Send the embed
-            await interaction.response.send_message(embed=task_embed)
-
-        else:
-            # The message author does not have one of the roles
-            # Don't perform the code actions
-            await interaction.response.send_message(
-                "**You do not have permission to run this command!** :x:"
-            )
+        #  sync the commands
+        synced = await self.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
 
 
 def reset_values():
@@ -165,25 +50,6 @@ scheduler.add_job(reset_values, "cron", day_of_week="1", hour=0, minute=0)
 
 scheduler.start()
 
-
-# non-slash command part of code
-@bot.event
-async def on_message(message):
-    args = str(message.content).lower().split()
-    if args[0] == "bruh":
-        await message.channel.send("<:bruh_stone:1059119664543825950>")
-
-    elif args[0] in ("i'm", "im", "I am") and " ".join(args[1:]) == "horny":
-        await message.channel.send(
-            "https://tenor.com/view/vorzek-vorzneck-oglg-og-lol-gang-gif-24901093"  # noqa: E501
-        )
-
-    elif args[0] == "moo":
-        await message.channel.send(
-            "https://tenor.com/view/holy-cow-holy-cow-gif-25938150"
-        )
-
-
 if __name__ == "__main__":
 
     logger = logging.getLogger("discord")
@@ -202,4 +68,9 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    bot.run(os.getenv("TOKEN", ""))
+    BlackPearlBot().run(
+        os.getenv(
+            "TOKEN",
+            "",
+        )
+    )
