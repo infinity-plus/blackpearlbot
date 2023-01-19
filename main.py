@@ -2,12 +2,12 @@ import json
 import logging
 import os
 
-import discord
 from apscheduler.schedulers.background import BackgroundScheduler
+from discord import Embed, Intents, Interaction, Member, utils
 from discord.ext import commands
 
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="/", intents=discord.Intents.all())
+intents = Intents.all()
+bot = commands.Bot(command_prefix="/", intents=Intents.all())
 
 
 @bot.event
@@ -17,16 +17,9 @@ async def on_ready():
 
 
 @bot.tree.command(name="ping", description="Displays the bot's latency.")
-async def ping(interaction: discord.Interaction):
+async def ping(interaction: Interaction):
     await interaction.response.send_message(
         f"**Latency:** {bot.latency} Milliseconds",
-    )
-
-
-@bot.tree.command(name="clayton", description="Face reveal of Terrence.")
-async def clayton(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        "https://i.pinimg.com/originals/f3/25/40/f32540c61fd8c8f585bbb99161632934.jpg"  # noqa: E501
     )
 
 
@@ -34,27 +27,27 @@ async def clayton(interaction: discord.Interaction):
     name="taskdone",
     description="Adds +1 to your amount of completed tasks.",
 )
-async def taskdone(interaction: discord.Interaction):
+async def taskdone(interaction: Interaction):
     author_id = str(interaction.user.id)
     for guild in bot.guilds:
-        junior_devs = discord.utils.get(
+        junior_devs = utils.get(
             guild.roles,
             name="Junior Developers",
         )
-        senior_devs = discord.utils.get(
+        senior_devs = utils.get(
             guild.roles,
             name="Senior Developers",
         )
-        lead_devs = discord.utils.get(
+        lead_devs = utils.get(
             guild.roles,
             name="Lead Developers",
         )
-        project_managers = discord.utils.get(
+        project_managers = utils.get(
             guild.roles,
             name="Project Managers",
         )
 
-        if not isinstance(interaction.user, discord.Member):
+        if not isinstance(interaction.user, Member):
             return
 
         if (
@@ -92,23 +85,23 @@ async def taskdone(interaction: discord.Interaction):
     description="Displays a list of every developer"
     " and their number of completed tasks.",
 )
-async def viewtasks(interaction: discord.Interaction):
-    if not isinstance(interaction.user, discord.Member):
+async def viewtasks(interaction: Interaction):
+    if not isinstance(interaction.user, Member):
         return
     for guild in bot.guilds:
-        junior_devs = discord.utils.get(
+        junior_devs = utils.get(
             guild.roles,
             name="Junior Developers",
         )
-        senior_devs = discord.utils.get(
+        senior_devs = utils.get(
             guild.roles,
             name="Senior Developers",
         )
-        lead_devs = discord.utils.get(
+        lead_devs = utils.get(
             guild.roles,
             name="Lead Developers",
         )
-        project_managers = discord.utils.get(
+        project_managers = utils.get(
             guild.roles,
             name="Project Managers",
         )
@@ -131,7 +124,7 @@ async def viewtasks(interaction: discord.Interaction):
                 )
             )
             # Create the embed
-            task_embed = discord.Embed(
+            task_embed = Embed(
                 title="Tasks Completed This Week",
                 description=message_text,
                 color=0x2F3136,
