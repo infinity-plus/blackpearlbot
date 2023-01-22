@@ -74,20 +74,20 @@ async def filter_delete(interaction: discord.Interaction, trigger: str):
 @bot.tree.command()
 async def filter_wipe(interaction: discord.Interaction):
     """Wipe the filter database."""
+    # Send a message asking the user to confirm the action
     confirm_message = await interaction.channel.send(
-        "Are you sure you want to delete all filters?\nThis action cannot be undone."
-        "\nType `yes` to confirm or `no` to cancel.")
+        "Are you sure you want to delete all filters?\nThis action cannot be undone.")
+    await confirm_message.add_reaction("👍")
+    await confirm_message.add_reaction("👎")
 
-    def check(m):
-        return m.content.lower() in (
-            'yes', 'no') and m.channel == interaction.channel and m.author == interaction.user
+    def check(reaction, user):
+        return user == interaction.user and str(reaction.emoji) in ("👍", "👎")
 
     try:
-        confirm_response = await bot.wait_for('message', check=check, timeout=60.0)
-        if confirm_response.content.lower() == 'yes':
+        reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60.0)
+        if str(reaction.emoji) == "👍":
             conn = sqlite3.connect('triggers.db')
             c = conn.cursor()
-            # Delete all rows from the triggers table
             c.execute("DELETE FROM triggers")
             conn.commit()
             await interaction.channel.send("Filter database has been successfully wiped!")
@@ -97,8 +97,8 @@ async def filter_wipe(interaction: discord.Interaction):
         # If the user does not confirm within 60 seconds, send a message and return
         await confirm_message.edit(content="Filter wipe cancelled, time limit exceeded.")
         return
-      
-      
+
+           
 @bot.tree.command()
 async def filter_list(interaction: discord.Interaction):
     """List all existing filter triggers and responses."""
