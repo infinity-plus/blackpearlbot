@@ -3,7 +3,7 @@ import logging
 import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from discord import Embed, Intents, Interaction, Member, utils
+from discord import Intents
 from discord.ext import commands
 
 
@@ -20,6 +20,7 @@ class BlackPearlBot(commands.Bot):
         await self.load_extension("fun")
         await self.load_extension("status")
         await self.load_extension("tasks")
+        await self.load_extension("tickets")
 
         #  sync the commands
         synced = await self.tree.sync()
