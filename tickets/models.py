@@ -1,4 +1,7 @@
-from typing import Optional, Type
+from typing import Optional
+
+from sqlalchemy import select, update, delete
+from sqlalchemy.orm import selectinload
 
 from .database import SESSION, Panel, Form, Field
 
@@ -6,196 +9,377 @@ from .database import SESSION, Panel, Form, Field
 class PanelModel:
     def __init__(
         self,
-        guild_id,
-        name,
-        description,
-        id=None,
+        guild_id: str,
+        name: str,
+        description: str,
+        id: Optional[int] = None,
         forms=None,
+        **kwargs,
     ):
         self.guild_id = guild_id
         self.name = name
         self.description = description
         self.id = id
-        self.forms: list[FormModel] = forms or []
+        self.forms = (
+            [
+                FormModel(
+                    **form.__dict__,
+                )
+                for form in forms
+            ]
+            if forms
+            else []
+        )
 
     @classmethod
-    def create(
+    async def create(
         cls,
         guild_id: str,
         name: str,
         description: str = "",
+        **kwargs,
     ) -> int:
-        panel = Panel(guild_id=guild_id, name=name, description=description)
+        panel = Panel(
+            guild_id=guild_id,
+            name=name,
+            description=description,
+        )
+        SESSION.add(panel)
         try:
-            SESSION.add(panel)
-            SESSION.commit()
-        except Exception as e:
-            print(e)
-            SESSION.rollback()
-        return panel.id  # type: ignore
+            await SESSION.commit()
+            return PanelModel(**panel.__dict__).id  # type: ignore
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def get(cls, guild_id, panel_id) -> Optional["PanelModel"]:
-        if (
-            panel := SESSION.query(Panel)
-            .filter_by(
-                guild_id=guild_id,
-                id=panel_id,
+    async def get(
+        cls,
+        guild_id: str,
+        panel_id: int,
+        fetch_related: bool = False,
+    ) -> Optional["PanelModel"]:
+        query = select(Panel).where(
+            Panel.guild_id == guild_id,
+            Panel.id == panel_id,
+        )
+        if fetch_related:
+            query = query.options(
+                selectinload(Panel.forms).selectinload(
+                    Form.fields,
+                )
             )
-            .first()
-        ):
-            panel.__dict__.pop("_sa_instance_state")
-            panel = PanelModel(**panel.__dict__)
-            panel.forms = FormModel.get_all(panel.id)
-            return panel
+        panels = await SESSION.execute(query)
+        panel = panels.scalars().first()
+        if panel is None:
+            return None
+        panel = PanelModel(**panel.__dict__)
+        return panel
 
     @classmethod
-    def get_all(cls, guild_id) -> list["PanelModel"]:
-        ret_list = []
-        for panel in SESSION.query(Panel).filter_by(guild_id=guild_id).all():
-            panel.__dict__.pop("_sa_instance_state")
-            panel = PanelModel(**panel.__dict__)
-            panel.forms = FormModel.get_all(panel.id)
-            ret_list.append(panel)
-        return ret_list
+    async def get_all(
+        cls,
+        guild_id: str,
+        fetch_related: bool = False,
+    ) -> list["PanelModel"]:
+        query = select(Panel).where(Panel.guild_id == guild_id)
+        if fetch_related:
+            query = query.options(
+                selectinload(
+                    Panel.forms,
+                ).selectinload(Form.fields)
+            )
+        panels = await SESSION.execute(query)
+        panels = panels.scalars().all()
+        return (
+            [
+                PanelModel(
+                    **panel.__dict__,
+                )
+                for panel in panels
+            ]
+            if panels
+            else []
+        )
 
     @classmethod
-    def update(cls, guild_id, panel_id, name, description):
-        if panel := cls.get(guild_id, panel_id):
-            panel.name = name
-            panel.description = description
-            SESSION.commit()
-            return panel.id
+    async def update(
+        cls,
+        guild_id: str,
+        panel_id: int,
+        name: str,
+        description: str,
+    ) -> None:
+        query = (
+            update(Panel)
+            .where(
+                Panel.guild_id == guild_id,
+                Panel.id == panel_id,
+            )
+            .values(name=name, description=description)
+        )
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def delete(cls, guild_id, panel_id):
-        if panel := cls.get(guild_id, panel_id):
-            SESSION.delete(panel)
-            SESSION.commit()
+    async def delete(cls, guild_id: str, panel_id: int) -> None:
+        query = delete(Panel).where(
+            Panel.guild_id == guild_id,
+            Panel.id == panel_id,
+        )
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def delete_all(cls, guild_id):
-        SESSION.query(Panel).filter_by(guild_id=guild_id).delete()
-        SESSION.commit()
+    async def delete_all(cls, guild_id: str) -> None:
+        query = delete(Panel).where(Panel.guild_id == guild_id)
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
 
 class FormModel:
-    def __init__(self, panel_id, name, description, id=None, fields=None):
+    def __init__(
+        self,
+        panel_id: int,
+        name: str,
+        id: Optional[int],
+        description: str = "",
+        fields=None,
+        **kwargs,
+    ):
         self.panel_id = panel_id
         self.name = name
         self.description = description
         self.id = id
-        self.fields: list[FieldModel] = fields or []
+        self.fields = []
+        if fields:
+            self.fields = [FieldModel(**field.__dict__) for field in fields]
 
     @classmethod
-    def create(cls, panel_id, name, description=""):
-        form = Form(panel_id=panel_id, name=name, description=description)
+    async def create(
+        cls,
+        panel_id: int,
+        name: str,
+        description: str = "",
+        **kwargs,
+    ) -> str:
+        form = Form(
+            panel_id=panel_id,
+            name=name,
+            description=description,
+        )
         SESSION.add(form)
-        SESSION.commit()
-        return form.id
+        try:
+            await SESSION.commit()
+            return FormModel(**form.__dict__).id  # type: ignore
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def get(cls, panel_id, form_id) -> Optional["FormModel"]:
-        #  Get form from database
-        #  pop _sa_instance_state
-        #  return FormModel
-        if (
-            form := SESSION.query(Form)
-            .filter_by(
-                panel_id=panel_id,
-                id=form_id,
+    async def get(
+        cls,
+        panel_id: int,
+        form_id: int,
+        fetch_related: bool = False,
+    ) -> Optional["FormModel"]:
+        query = select(Form).where(
+            Form.panel_id == panel_id,
+            Form.id == form_id,
+        )
+        if fetch_related:
+            query = query.options(
+                selectinload(Form.fields),
             )
-            .first()
-        ):
-            form.__dict__.pop("_sa_instance_state")
-            form = FormModel(**form.__dict__)
-            form.fields = FieldModel.get_all(form.id)
-            return form
+        forms = await SESSION.execute(query)
+        form = forms.scalars().first()
+        return FormModel(**form.__dict__) if form else None
 
     @classmethod
-    def get_all(cls, panel_id) -> list["FormModel"]:
-        #  Convert to FormModel and
-        # remove _sa_instance_state from dict
-        ret_list = []
-        for form in SESSION.query(Form).filter_by(panel_id=panel_id).all():
-            form.__dict__.pop("_sa_instance_state")
-            #  Convert to FormModel
-            ret_list.append(FormModel(**form.__dict__))
-        return ret_list
+    async def get_all(
+        cls,
+        panel_id: int,
+        fetch_related: bool = False,
+    ) -> list["FormModel"]:
+        query = select(Form).where(Form.panel_id == panel_id)
+        if fetch_related:
+            query = query.options(
+                selectinload(Form.fields),
+            )
+        forms = await SESSION.execute(query)
+        forms = forms.scalars().all()
+        return (
+            [
+                FormModel(
+                    **form.__dict__,
+                )
+                for form in forms
+            ]
+            if forms
+            else []
+        )
 
     @classmethod
-    def update(cls, panel_id, form_id, name, description):
-        if form := cls.get(panel_id, form_id):
-            form.name = name
-            form.description = description
-            SESSION.commit()
-            return form.id
+    async def update(
+        cls,
+        panel_id: int,
+        form_id: int,
+        name: str,
+        description: str = "",
+    ) -> None:
+        query = (
+            update(Form)
+            .where(
+                Form.panel_id == panel_id,
+                Form.id == form_id,
+            )
+            .values(name=name, description=description)
+        )
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def delete(cls, panel_id, form_id):
-        if form := cls.get(panel_id, form_id):
-            SESSION.delete(form)
-            SESSION.commit()
+    async def delete(cls, panel_id: int, form_id: int) -> None:
+        query = delete(Form).where(
+            Form.panel_id == panel_id,
+            Form.id == form_id,
+        )
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def delete_all(cls, panel_id):
-        SESSION.query(Form).filter_by(panel_id=panel_id).delete()
-        SESSION.commit()
+    async def delete_all(cls, panel_id):
+        query = delete(Form).where(Form.panel_id == panel_id)
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
 
 class FieldModel:
-    def __init__(self, form_id, name, response, id=None):
+    def __init__(
+        self,
+        form_id: int,
+        name: str,
+        response: str = "",
+        id=None,
+        **kwargs,
+    ):
         self.form_id = form_id
         self.id = id
         self.name = name
-        self.response = response
+        self.response = response or ""
 
     @classmethod
-    def create(cls, form_id, name, response=""):
-        field = Field(form_id=form_id, name=name, response=response)
+    async def create(
+        cls,
+        form_id: int,
+        name: str,
+        response: str = "",
+    ) -> str:
+        field = Field(
+            form_id=form_id,
+            name=name,
+            response=response,
+        )
         SESSION.add(field)
-        SESSION.commit()
-        return field.id
+        try:
+            await SESSION.commit()
+            return FieldModel(**field.__dict__).id  # type: ignore
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def get(cls, form_id, field_id) -> Optional["FieldModel"]:
-        if (
-            field := SESSION.query(Field)
-            .filter_by(
-                form_id=form_id,
-                id=field_id,
+    async def get(cls, form_id: int, field_id: int) -> Optional["FieldModel"]:
+        query = select(Field).where(
+            Field.form_id == form_id,
+            Field.id == field_id,
+        )
+        fields = await SESSION.execute(query)
+        field = fields.scalars().first()
+        return FieldModel(**field.__dict__) if field else None
+
+    @classmethod
+    async def get_all(cls, form_id: int) -> list["FieldModel"]:
+        query = select(Field).where(Field.form_id == form_id)
+        fields = await SESSION.execute(query)
+        fields = fields.scalars().all()
+        return (
+            [
+                FieldModel(
+                    **field.__dict__,
+                )
+                for field in fields
+            ]
+            if fields
+            else []
+        )
+
+    @classmethod
+    async def update(
+        cls,
+        form_id: int,
+        field_id: int,
+        name: str,
+        response: str = "",
+    ) -> None:
+        query = (
+            update(Field)
+            .where(
+                Field.form_id == form_id,
+                Field.id == field_id,
             )
-            .first()
-        ):
-            field.__dict__.pop("_sa_instance_state")
-            return FieldModel(**field.__dict__)
+            .values(name=name, response=response)
+        )
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def get_all(cls, form_id) -> list["FieldModel"]:
-        #  Convert to FieldModel and
-        # remove _sa_instance_state from dict
-        ret_list = []
-        for field in SESSION.query(Field).filter_by(form_id=form_id).all():
-            field.__dict__.pop("_sa_instance_state")
-            #  Convert to FieldModel
-            ret_list.append(FieldModel(**field.__dict__))
-        return ret_list
+    async def delete(cls, form_id: int, field_id: int) -> None:
+        query = delete(Field).where(
+            Field.form_id == form_id,
+            Field.id == field_id,
+        )
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
 
     @classmethod
-    def update(cls, form_id, field_id, name, response):
-        if field := cls.get(form_id, field_id):
-            field.name = name
-            field.response = response
-            SESSION.commit()
-            return field.id
-
-    @classmethod
-    def delete(cls, form_id, field_id):
-        if field := cls.get(form_id, field_id):
-            SESSION.delete(field)
-            SESSION.commit()
-
-    @classmethod
-    def delete_all(cls, form_id):
-        SESSION.query(Field).filter_by(form_id=form_id).delete()
-        SESSION.commit()
+    async def delete_all(cls, form_id: int) -> None:
+        query = delete(Field).where(Field.form_id == form_id)
+        await SESSION.execute(query)
+        try:
+            await SESSION.commit()
+        except Exception:
+            await SESSION.rollback()
+            raise
