@@ -3,7 +3,7 @@ import json
 from discord import Button, Interaction, app_commands
 from discord.ext import commands
 
-from .ui import PanelView, TicketView
+from .ui import PanelView, TicketView, FormCreate
 from .models import PanelModel, FormModel, FieldModel
 
 
@@ -40,7 +40,7 @@ class Tickets(commands.GroupCog):
         description: str = "",
     ):
         guild_id = interaction.guild_id or 0
-        PanelModel.create(
+        await PanelModel.create(
             guild_id=str(guild_id),
             name=name,
             description=description,
@@ -60,7 +60,7 @@ class Tickets(commands.GroupCog):
         panel_id: int,
     ):
         guild_id = interaction.guild_id or 0
-        PanelModel.delete(str(guild_id), panel_id)
+        await PanelModel.delete(str(guild_id), panel_id)
         await interaction.response.send_message(
             f"Deleted panel `{panel_id}`",
             ephemeral=True,
@@ -72,7 +72,7 @@ class Tickets(commands.GroupCog):
     )
     async def panel_list(self, interaction: Interaction):
         guild_id = interaction.guild_id or 0
-        panels = PanelModel.get_all(str(guild_id))
+        panels = await PanelModel.get_all(str(guild_id))
         ret_list = []
         for panel in panels:
             panel_dict = {
@@ -97,7 +97,7 @@ class Tickets(commands.GroupCog):
         description: str = "",
     ):
         guild_id = interaction.guild_id or 0
-        PanelModel.update(
+        await PanelModel.update(
             guild_id=str(guild_id),
             panel_id=panel_id,
             name=name,
@@ -118,7 +118,7 @@ class Tickets(commands.GroupCog):
         panel_id: int,
     ):
         guild_id = interaction.guild_id or 0
-        panel = PanelModel.get(str(guild_id), panel_id)
+        panel = await PanelModel.get(str(guild_id), panel_id)
         if not panel:
             await interaction.response.send_message(
                 f"Panel `{panel_id}` not found",
@@ -146,19 +146,8 @@ class Tickets(commands.GroupCog):
     async def form_create(
         self,
         interaction: Interaction,
-        panel_id: int,
-        name: str,
-        description: str = "",
     ):
-        FormModel.create(
-            panel_id=panel_id,
-            name=name,
-            description=description,
-        )
-        await interaction.response.send_message(
-            f"Created form `{name}`",
-            ephemeral=True,
-        )
+        await interaction.response.send_modal(FormCreate())
 
     @form.command(
         name="delete",
@@ -170,7 +159,7 @@ class Tickets(commands.GroupCog):
         panel_id: int,
         form_id: int,
     ):
-        FormModel.delete(panel_id, form_id)
+        await FormModel.delete(panel_id, form_id)
         await interaction.response.send_message(
             f"Deleted form `{form_id}`",
             ephemeral=True,
@@ -185,7 +174,7 @@ class Tickets(commands.GroupCog):
         interaction: Interaction,
         panel_id: int,
     ):
-        forms = FormModel.get_all(panel_id)
+        forms = await FormModel.get_all(panel_id)
         ret_list = [
             {
                 "id": form.id,
@@ -210,7 +199,7 @@ class Tickets(commands.GroupCog):
         name: str,
         description: str = "",
     ):
-        FormModel.update(
+        await FormModel.update(
             panel_id=panel_id,
             form_id=form_id,
             name=name,
@@ -236,7 +225,7 @@ class Tickets(commands.GroupCog):
         form_id: int,
         name: str,
     ):
-        FieldModel.create(
+        await FieldModel.create(
             form_id=form_id,
             name=name,
             response="",
@@ -256,7 +245,7 @@ class Tickets(commands.GroupCog):
         form_id: int,
         field_id: int,
     ):
-        FieldModel.delete(form_id, field_id)
+        await FieldModel.delete(form_id, field_id)
         await interaction.response.send_message(
             f"Deleted field `{field_id}`",
             ephemeral=True,
@@ -271,10 +260,10 @@ class Tickets(commands.GroupCog):
         interaction: Interaction,
         form_id: int,
     ):
-        fields = FieldModel.get_all(form_id)
+        fields = await FieldModel.get_all(form_id)
+        fields = [field.__dict__ for field in fields]
         await interaction.response.send_message(
-            f"Fields: {fields}",
-            ephemeral=True,
+            f"Fields: ```json\n{json.dumps(fields, indent=4)}```",
         )
 
     @field.command(
@@ -288,7 +277,7 @@ class Tickets(commands.GroupCog):
         field_id: int,
         name: str,
     ):
-        FieldModel.update(
+        await FieldModel.update(
             form_id=form_id,
             field_id=field_id,
             response="",

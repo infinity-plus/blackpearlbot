@@ -1,11 +1,14 @@
 from os import getenv
 
-from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import (
     relationship,
     declarative_base,
-    scoped_session,
     sessionmaker,
+)
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
 )
 
 BASE = declarative_base()
@@ -41,12 +44,28 @@ class Field(BASE):
     response = Column(String(500))
 
 
-def start() -> scoped_session:
-    """Create engine and return a scoped session instance"""
-    engine = create_engine(DB_URI, client_encoding="utf8")
-    BASE.metadata.bind = engine
-    BASE.metadata.create_all(engine)
-    return scoped_session(sessionmaker(bind=engine, autoflush=False))
+class AsyncDatabaseSession:
+    def __init__(self):
+        self._session = None
+        self._engine = None
+
+    def __getattr__(self, name):
+        return getattr(self._session, name)
+
+    def init(self):
+        self._engine = create_async_engine(
+            DB_URI,
+            future=True,
+            query_cache_size=1200,
+        )
+        self._session = sessionmaker(
+            self._engine, expire_on_commit=False, class_=AsyncSession
+        )()
+
+    async def create_all(self):
+        async with self._engine.begin() as conn:  # type: ignore
+            await conn.run_sync(BASE.metadata.create_all)
 
 
-SESSION = start()
+SESSION = AsyncDatabaseSession()
+SESSION.init()
