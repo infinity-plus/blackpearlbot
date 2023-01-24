@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-
 BASE = declarative_base()
 
 DB_URI = getenv("DATABASE_URL", "sqlite:///database.db")
