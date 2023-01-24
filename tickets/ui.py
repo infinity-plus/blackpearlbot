@@ -10,11 +10,11 @@ from discord import (
     Interaction,
     Member,
     Message,
+    SelectOption,
     TextChannel,
-    TextStyle,
     utils,
 )
-from discord.ui import Button, Modal, TextInput, View, button
+from discord.ui import Button, Modal, TextInput, View, button, Select
 from tickets.models import PanelModel, FormModel, FieldModel
 
 from tickets.history_html import HTML, message
@@ -37,6 +37,79 @@ def export_html(file_name: str, messages: list[Message]) -> str:
     return file_name
 
 
+class FieldCreate(Modal, title="Create form fields"):
+    def __init__(self, form_id: int) -> None:
+        super().__init__()
+        self.form_id = form_id
+        for i in range(5):
+            self.add_item(TextInput(label=f"Field {i + 1}", required=False))
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        await interaction.response.send_message(
+            "Form created",
+            ephemeral=True,
+        )
+        for i in range(len(self.children)):
+            if name := self.children[i].value:  # type: ignore
+                await FieldModel.create(form_id=self.form_id, name=name)
+
+
+class PanelSelect(Select):
+    def __init__(self, options: list[SelectOption], form_inputs, **kwargs):
+        super().__init__(options=options, **kwargs)
+        self.form_inputs = form_inputs
+
+    async def callback(self, interaction: Interaction):
+        self.view.stop()  # type: ignore
+        panel_id = self.values[0]
+        form_title = self.form_inputs[0].value
+        form_description = self.form_inputs[1].value
+        form_id = await FormModel.create(
+            panel_id=int(panel_id),  # type: ignore
+            name=form_title,
+            description=form_description,
+        )
+        await interaction.response.send_modal(
+            FieldCreate(form_id=form_id),  # type: ignore
+        )
+        await interaction.delete_original_response()
+
+
+class FormCreate(Modal, title="Create a Form"):
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_item(TextInput(label="Form Name", custom_id="name"))
+        self.add_item(TextInput(label="Form Description"))
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        if not interaction.guild:
+            return
+        panels = await PanelModel.get_all(str(interaction.guild.id))
+        if not panels:
+            await interaction.response.send_message(
+                "Please create a panel first",
+                ephemeral=True,
+            )
+            return
+        await interaction.response.defer()
+        options = [
+            SelectOption(
+                label=panel.name,
+                description=panel.description or "No description",
+                value=panel.id,  # type: ignore
+            )
+            for panel in panels
+        ]
+        dropdown = PanelSelect(options=options, form_inputs=self.children)
+        view = View()
+        view.add_item(dropdown)
+        await interaction.followup.send(
+            "Select a panel",
+            view=view,
+            ephemeral=True,
+        )
+
+
 class PanelButton(Button):
     def __init__(self, form: FormModel, **kwargs):
         super().__init__(
@@ -45,23 +118,22 @@ class PanelButton(Button):
         self.form = form
 
     async def callback(self, interaction: Interaction):
-        fields = FieldModel.get_all(self.form.id)
+        fields = await FieldModel.get_all(self.form.id)  # type: ignore
         inputs = [field.name for field in fields]
         await interaction.response.send_modal(Form(inputs))
 
 
 class PanelView(View):
-    def __init__(self, panel: PanelModel | None = None):
+    async def __init__(self, panel: PanelModel | None = None):
         super().__init__()
         self.value = None
         if panel is None:
             return
-        forms = FormModel.get_all(panel.id)
+        forms = await FormModel.get_all(panel.id)  # type: ignore
         for form in forms:
             button = PanelButton(
                 label=form.name,
                 style=ButtonStyle.green,
-                custom_id=str(form.id),
                 form=form,
             )
             self.add_item(button)
@@ -107,7 +179,6 @@ class TicketView(View):
             await channel.delete(reason="Ticket closed")
 
 
-#  A view to ask user his name
 class Form(Modal, title="Ticket"):
     def __init__(self, inputs: list[str]):
         super().__init__()
