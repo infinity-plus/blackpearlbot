@@ -17,10 +17,10 @@ class BlackPearlBot(commands.Bot):
     # the method to override in order to run whatever you need
     # before your bot starts
     async def setup_hook(self):
-        await self.load_extension("fun")
         await self.load_extension("status")
-        await self.load_extension("tasks")
-        await self.load_extension("tickets")
+        await self.load_extension("plugins.fun")
+        await self.load_extension("plugins.tasks")
+        await self.load_extension("plugins.tickets")
 
         #  sync the commands
         synced = await self.tree.sync()
