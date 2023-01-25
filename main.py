@@ -21,6 +21,7 @@ class BlackPearlBot(commands.Bot):
         await self.load_extension("plugins.fun")
         await self.load_extension("plugins.tasks")
         await self.load_extension("plugins.tickets")
+        await self.load_extension("plugins.filters")
 
         #  sync the commands
         synced = await self.tree.sync()
