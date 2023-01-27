@@ -37,11 +37,86 @@ def export_html(file_name: str, messages: list[Message]) -> str:
     return file_name
 
 
+class PanelEditModal(Modal, title="Edit a panel"):
+    def __init__(self, panel: PanelModel):
+        super().__init__(timeout=None)
+        self.panel = panel
+        self.add_item(
+            TextInput(
+                label="Panel name",
+                default=panel.name,
+                required=True,
+            )
+        )
+        self.add_item(
+            TextInput(
+                label="Panel description",
+                default=panel.description,
+                required=True,
+            )
+        )
+
+    async def on_submit(self, interaction: Interaction, /) -> None:
+        name = self.children[0].value  # type: ignore
+        description = self.children[1].value if self.children[1].value else self.panel.description  # type: ignore  # noqa: E501
+        await PanelModel.update(
+            self.panel.guild_id,
+            self.panel.id if self.panel.id else 0,
+            name=name,
+            description=description,
+        )
+        await interaction.response.send_message(
+            content="Panel updated successfully",
+        )
+
+
+class PanelEdit(Select):
+    def __init__(self, guild_id: str, panels: list[PanelModel], **kwargs):
+        self.guild_id = guild_id
+        options = [SelectOption(label=p.name, value=str(p.id)) for p in panels]
+        super().__init__(options=options, **kwargs)
+
+    async def callback(self, interaction: Interaction):
+        self.view.stop()  # type: ignore
+        panel_id = int(self.values[0])
+        panel = await PanelModel.get(self.guild_id, panel_id)
+        if panel is None:
+            await interaction.response.edit_message(
+                content=f"Panel `{panel_id}` not found",
+                view=None,
+            )
+            return
+        modal = PanelEditModal(panel)
+        await interaction.response.send_modal(modal)
+
+
+class PanelDelete(Select):
+    def __init__(
+        self,
+        guild_id: str,
+        panels: list[PanelModel],
+        **kwargs,
+    ):
+        self.guild_id = guild_id
+        options = [SelectOption(label=p.name, value=str(p.id)) for p in panels]
+        super().__init__(options=options, **kwargs)
+
+    async def callback(self, interaction: Interaction):
+        self.view.stop()  # type: ignore
+        panel_id = int(self.values[0])
+        await PanelModel.delete(guild_id=self.guild_id, panel_id=panel_id)
+        await interaction.response.edit_message(
+            content=f"Panel deleted successfully",
+            view=None,
+        )
+
+
 class FieldCreate(Modal, title="Create form fields"):
     def __init__(self, form_id: int) -> None:
         super().__init__()
         self.form_id = form_id
-        for i in range(5):
+        self.add_item(TextInput(label="Field 1", required=True))
+        for i in range(1, 5):
             self.add_item(TextInput(label=f"Field {i + 1}", required=False))
 
     async def on_submit(self, interaction: Interaction) -> None:
@@ -78,7 +153,7 @@ class PanelSelect(Select):
 class FormCreate(Modal, title="Create a Form"):
     def __init__(self) -> None:
         super().__init__()
-        self.add_item(TextInput(label="Form Name", custom_id="name"))
+        self.add_item(TextInput(label="Form Name", required=True))
         self.add_item(TextInput(label="Form Description"))
 
     async def on_submit(self, interaction: Interaction) -> None:
@@ -124,13 +199,12 @@ class PanelButton(Button):
 
 
 class PanelView(View):
-    async def __init__(self, panel: PanelModel | None = None):
+    def __init__(self, panel: PanelModel | None = None):
         super().__init__()
         self.value = None
         if panel is None:
             return
-        forms = await FormModel.get_all(panel.id)  # type: ignore
-        for form in forms:
+        for form in panel.forms:
             button = PanelButton(
                 label=form.name,
                 style=ButtonStyle.green,

@@ -2,8 +2,9 @@ import json
 
 from discord import Button, Interaction, app_commands
 from discord.ext import commands
+from discord.ui import View
 
-from .ui import PanelView, TicketView, FormCreate
+from .ui import PanelDelete, PanelEdit, PanelView, TicketView, FormCreate
 from .models import PanelModel, FormModel, FieldModel
 
 
@@ -57,12 +58,15 @@ class Tickets(commands.GroupCog):
     async def panel_delete(
         self,
         interaction: Interaction,
-        panel_id: int,
     ):
-        guild_id = interaction.guild_id or 0
-        await PanelModel.delete(str(guild_id), panel_id)
+        guild_id = str(interaction.guild_id) or "0"
+        panels = await PanelModel.get_all(guild_id)
+        dropdown = PanelDelete(guild_id, panels)
+        view = View()
+        view.add_item(dropdown)
         await interaction.response.send_message(
-            f"Deleted panel `{panel_id}`",
+            "Select a panel to delete",
+            view=view,
             ephemeral=True,
         )
 
@@ -89,22 +93,15 @@ class Tickets(commands.GroupCog):
         name="edit",
         description="Edit a ticket panel",
     )
-    async def panel_edit(
-        self,
-        interaction: Interaction,
-        panel_id: int,
-        name: str,
-        description: str = "",
-    ):
-        guild_id = interaction.guild_id or 0
-        await PanelModel.update(
-            guild_id=str(guild_id),
-            panel_id=panel_id,
-            name=name,
-            description=description,
-        )
+    async def panel_edit(self, interaction: Interaction):
+        guild_id = str(interaction.guild_id) or "0"
+        panels = await PanelModel.get_all(guild_id)
+        dropdown = PanelEdit(guild_id, panels)
+        view = View()
+        view.add_item(dropdown)
         await interaction.response.send_message(
-            f"Edited panel `{panel_id}`",
+            "Select a panel to edit",
+            view=view,
             ephemeral=True,
         )
 
@@ -118,7 +115,11 @@ class Tickets(commands.GroupCog):
         panel_id: int,
     ):
         guild_id = interaction.guild_id or 0
-        panel = await PanelModel.get(str(guild_id), panel_id)
+        panel = await PanelModel.get(
+            str(guild_id),
+            panel_id,
+            fetch_related=True,
+        )
         if not panel:
             await interaction.response.send_message(
                 f"Panel `{panel_id}` not found",
@@ -128,7 +129,10 @@ class Tickets(commands.GroupCog):
         panelview = PanelView(panel)
         title = f"**{panel.name}**"
         description = panel.description
-        content = f"{title}\n{description}"
+        form_text = ""
+        for idx, form in enumerate(panel.forms):
+            form_text += f"{idx + 1}. **{form.name}**\n{form.description}\n\n"
+        content = f"{title}\n{description}\n\n{form_text}"
         await interaction.response.send_message(
             content=content,
             view=panelview,
