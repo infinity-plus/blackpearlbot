@@ -25,7 +25,7 @@ class Status(commands.Cog):
     )
     async def ping(self, interaction: Interaction):
         await interaction.response.send_message(
-            f"**Latency:** {self.bot.latency} Milliseconds",
+            f"**Latency:** {round(self.bot.latency, 3)} ms",
         )
 
 
