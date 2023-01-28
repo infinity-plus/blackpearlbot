@@ -25,12 +25,12 @@ class BlackPearlBot(commands.Bot):
     # before your bot starts
     async def setup_hook(self):
 
-        await self.load_extension("status")
+        await self.load_extension("blackpearlbot.status")
 
-        for p in pkgutil.iter_modules(["plugins"]):
+        for p in pkgutil.iter_modules(["blackpearlbot/plugins"]):
             if p.name in EXCLUDE_MODULES:
                 continue
-            await self.load_extension(f"plugins.{p[1]}")
+            await self.load_extension(f"blackpearlbot.plugins.{p[1]}")
 
         #  sync the commands   BAD BAD BAD
         # synced = await self.tree.sync()

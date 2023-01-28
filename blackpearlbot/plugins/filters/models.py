@@ -2,7 +2,7 @@ from typing import Optional
 
 from sqlalchemy import delete, select, update
 
-from plugins.database import SESSION
+from blackpearlbot.plugins.database import SESSION
 
 from .database import Filter
 
