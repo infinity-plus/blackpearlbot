@@ -1,7 +1,11 @@
 import json
+import logging
 
 from discord import Embed, Interaction, Member, app_commands, utils
 from discord.ext import commands
+
+
+logger = logging.getLogger(__name__)
 
 
 class Tasks(commands.Cog):
@@ -10,11 +14,11 @@ class Tasks(commands.Cog):
 
     # doing something when the cog gets loaded
     async def cog_load(self):
-        print(f"{self.__class__.__name__} loaded!")
+        logger.info(f"{self.__class__.__name__} loaded!")
 
     # doing something when the cog gets unloaded
     async def cog_unload(self):
-        print(f"{self.__class__.__name__} unloaded!")
+        logger.info(f"{self.__class__.__name__} unloaded!")
 
     @app_commands.command(
         name="taskdone",

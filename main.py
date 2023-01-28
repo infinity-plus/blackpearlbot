@@ -1,11 +1,15 @@
 import json
 import logging
+import logging.handlers
 import os
 import pkgutil
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from discord import Intents
 from discord.ext import commands
+
+
+logger = logging.getLogger(__name__)
 
 EXCLUDE_MODULES = ["database"]
 
@@ -28,9 +32,9 @@ class BlackPearlBot(commands.Bot):
                 continue
             await self.load_extension(f"plugins.{p[1]}")
 
-        #  sync the commands
-        synced = await self.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        #  sync the commands   BAD BAD BAD
+        # synced = await self.tree.sync()
+        # logger.info(f"Synced {len(synced)} command(s)")
 
 
 def reset_values():
@@ -59,12 +63,15 @@ scheduler.start()
 
 if __name__ == "__main__":
 
-    logger = logging.getLogger("discord")
-    logger.setLevel(logging.INFO)
-    handler = logging.FileHandler(
+    logger_discord = logging.getLogger("discord")
+    logger_discord.setLevel(logging.DEBUG)
+    logging.getLogger("discord.http").setLevel(logging.INFO)
+    handler = logging.handlers.RotatingFileHandler(
         filename="bot.log",
         encoding="utf-8",
-        mode="w",
+        mode="a",
+        maxBytes=32 * 1024 * 1024,  # 32 MiB
+        backupCount=5,  # Rotate through 5 files
     )
     dt_fmt = "%Y-%m-%d %H:%M:%S"
     formatter = logging.Formatter(
@@ -73,6 +80,7 @@ if __name__ == "__main__":
         style="{",
     )
     handler.setFormatter(formatter)
+    logger_discord.addHandler(handler)
     logger.addHandler(handler)
 
     BlackPearlBot().run(

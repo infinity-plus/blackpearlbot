@@ -1,4 +1,5 @@
 import json
+import logging
 
 from discord import Button, Interaction, app_commands
 from discord.ext import commands
@@ -15,6 +16,8 @@ from .ui import (
 )
 from .models import PanelModel, FormModel, FieldModel
 
+logger = logging.getLogger(__name__)
+
 
 @app_commands.guild_only()
 class Tickets(commands.GroupCog):
@@ -23,11 +26,11 @@ class Tickets(commands.GroupCog):
 
     # doing something when the cog gets loaded
     async def cog_load(self):
-        print(f"{self.__class__.__name__} loaded!")
+        logger.info(f"{self.__class__.__name__} loaded!")
 
     # doing something when the cog gets unloaded
     async def cog_unload(self):
-        print(f"{self.__class__.__name__} unloaded!")
+        logger.info(f"{self.__class__.__name__} unloaded!")
 
     async def setup_hook(self):
         self.bot.add_view(PanelView())

@@ -1,3 +1,4 @@
+import logging
 import re
 
 from discord import Interaction, Message, app_commands
@@ -6,6 +7,8 @@ from discord.ext import commands
 from . import models
 from .views import Confirm
 
+logger = logging.getLogger(__name__)
+
 
 class Filters(commands.GroupCog):
     def __init__(self, bot):
@@ -13,7 +16,7 @@ class Filters(commands.GroupCog):
 
     # doing something when the cog gets loaded
     async def cog_load(self):
-        print(f"Loading all {self.__class__.__name__} ...")
+        logger.info(f"Loading all {self.__class__.__name__} ...")
         temp_filters = await models.FilterModel.get_all("all")
 
         for chat_filter in temp_filters:
@@ -24,11 +27,11 @@ class Filters(commands.GroupCog):
             )
             if chat_filter not in models.CHAT_FILTERS[chat_filter.guild_id]:
                 models.CHAT_FILTERS[chat_filter.guild_id].append(chat_filter)
-        print(f"{self.__class__.__name__} loaded!")
+        logger.info(f"{self.__class__.__name__} loaded!")
 
     # doing something when the cog gets unloaded
     async def cog_unload(self):
-        print(f"{self.__class__.__name__} unloaded!")
+        logger.info(f"{self.__class__.__name__} unloaded!")
 
     @app_commands.guild_only()
     @app_commands.command(
