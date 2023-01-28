@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Filters(commands.GroupCog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # doing something when the cog gets loaded
