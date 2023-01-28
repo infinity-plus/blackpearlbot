@@ -35,10 +35,6 @@ class BlackPearlBot(commands.Bot):
                 continue
             await self.load_extension(f"blackpearlbot.plugins.{p[1]}")
 
-        #  sync the commands   BAD BAD BAD
-        # synced = await self.tree.sync()
-        # logger.info(f"Synced {len(synced)} command(s)")
-
 
 def reset_values():
     # Open the database file in read mode

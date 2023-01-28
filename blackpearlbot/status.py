@@ -43,6 +43,16 @@ class Status(commands.Cog):
             f"**Uptime:** {response}",
         )
 
+    @app_commands.command(
+        name="sync",
+        description="Sync the commands",
+    )
+    async def sync(self, interaction: Interaction):
+        synced = await self.bot.tree.sync()
+        await interaction.response.send_message(
+            f"Synced {len(synced)} command(s)",
+        )
+
 
 async def setup(bot):
     await bot.add_cog(Status(bot))
