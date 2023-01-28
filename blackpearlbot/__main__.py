@@ -3,11 +3,11 @@ import logging
 import logging.handlers
 import os
 import pkgutil
+from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from discord import Intents
 from discord.ext import commands
-
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +16,12 @@ EXCLUDE_MODULES = ["database"]
 
 class BlackPearlBot(commands.Bot):
     def __init__(self):
+        self.launch_time = datetime.utcnow()
+
         super().__init__(
             command_prefix="/",
             intents=Intents.all(),
+            launch_time=self.launch_time,
         )
 
     # the method to override in order to run whatever you need
