@@ -185,6 +185,99 @@ class FormCreate(Modal, title="Create a Form"):
         )
 
 
+class FormDelete(Select):
+    def __init__(self, panels: list[PanelModel], **kwargs):
+        self.panels = panels
+        options = []
+        for panel in panels:
+            for form in panel.forms:
+                options.append(
+                    SelectOption(
+                        label=form.name,
+                        value=f"{form.id}:{panel.id}",
+                    )
+                )
+        super().__init__(options=options, **kwargs)
+
+    async def callback(self, interaction: Interaction):
+        self.view.stop()  # type: ignore
+        form_id, panel_id = self.values[0].split(":")
+        await interaction.response.defer()
+        await FieldModel.delete_all(form_id=int(form_id))
+        await FormModel.delete(form_id=int(form_id), panel_id=int(panel_id))
+        await interaction.followup.send(
+            "Form deleted successfully",
+            ephemeral=True,
+        )
+
+
+class FormEdit(Modal, title="Edit form"):
+    def __init__(self, form: FormModel) -> None:
+        super().__init__()
+        self.form = form
+        self.add_item(
+            TextInput(
+                label="Form Name",
+                default=form.name,
+                required=True,
+            )
+        )
+        self.add_item(
+            TextInput(
+                label="Form Description",
+                default=form.description,
+            )
+        )
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        name = self.children[0].value  # type: ignore
+        description = self.children[1].value  # type: ignore
+        await FormModel.update(
+            panel_id=self.form.panel_id,
+            form_id=self.form.id,  # type: ignore
+            name=name,
+            description=description or self.form.description,
+        )
+        await interaction.response.send_message(
+            "Form edited",
+            ephemeral=True,
+        )
+
+
+class FormSelect(Select):
+    def __init__(self, panels: list[PanelModel], **kwargs):
+        self.panels = panels
+        options = []
+        for panel in panels:
+            for form in panel.forms:
+                options.append(
+                    SelectOption(
+                        label=form.name,
+                        value=f"{form.id}:{panel.id}",
+                    )
+                )
+        super().__init__(options=options, **kwargs)
+
+    async def callback(self, interaction: Interaction):
+        self.view.stop()  # type: ignore
+        form_id, panel_id = self.values[0].split(":")
+        panel = next(
+            (panel for panel in self.panels if panel.id == int(panel_id)),
+            None,
+        )
+        if panel is None:
+            return
+        form = next(
+            (form for form in panel.forms if form.id == int(form_id)),
+            None,
+        )
+
+        if form is None:
+            return
+        await interaction.response.send_modal(FormEdit(form))
+        await interaction.delete_original_response()
+
+
 class PanelButton(Button):
     def __init__(self, form: FormModel, **kwargs):
         super().__init__(
