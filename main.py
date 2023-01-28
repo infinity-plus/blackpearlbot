@@ -1,10 +1,13 @@
 import json
 import logging
 import os
+import pkgutil
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from discord import Intents
 from discord.ext import commands
+
+EXCLUDE_MODULES = ["database"]
 
 
 class BlackPearlBot(commands.Bot):
@@ -17,11 +20,13 @@ class BlackPearlBot(commands.Bot):
     # the method to override in order to run whatever you need
     # before your bot starts
     async def setup_hook(self):
+
         await self.load_extension("status")
-        await self.load_extension("plugins.fun")
-        await self.load_extension("plugins.tasks")
-        await self.load_extension("plugins.tickets")
-        await self.load_extension("plugins.filters")
+
+        for p in pkgutil.iter_modules(["plugins"]):
+            if p.name in EXCLUDE_MODULES:
+                continue
+            await self.load_extension(f"plugins.{p[1]}")
 
         #  sync the commands
         synced = await self.tree.sync()
