@@ -47,6 +47,17 @@ class Filters(commands.GroupCog):
         if interaction.guild_id is None:
             return
         await interaction.response.defer()
+
+        if filter.casefold() in [
+            filter.filter.casefold()
+            for filter in models.CHAT_FILTERS.get(
+                str(interaction.guild_id),
+                [],
+            )
+        ]:
+            return await interaction.followup.send(
+                content="That filter already exists on this server!",
+            )
         guild_id = str(interaction.guild_id)
         cust_filter_id = await models.FilterModel.create(
             guild_id=str(interaction.guild_id),
@@ -55,17 +66,6 @@ class Filters(commands.GroupCog):
         )
 
         models.CHAT_FILTERS[guild_id] = models.CHAT_FILTERS.get(guild_id, [])
-        if cust_filter_id not in [
-            filter.id for filter in models.CHAT_FILTERS[guild_id]
-        ]:  # check if filter exists or not
-            models.CHAT_FILTERS[guild_id].append(
-                models.FilterModel(
-                    id=cust_filter_id,
-                    guild_id=guild_id,
-                    filter=filter,
-                    response=response,
-                )
-            )
         models.CHAT_FILTERS[guild_id].append(
             models.FilterModel(
                 id=cust_filter_id,
