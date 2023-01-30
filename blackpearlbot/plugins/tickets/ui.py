@@ -1,40 +1,21 @@
-from os import remove, getcwd
-from os.path import join as path_join
 import traceback
+from io import BytesIO
 from uuid import uuid4
 
+import chat_exporter
 from discord import (
     ButtonStyle,
     Embed,
     File,
     Interaction,
     Member,
-    Message,
     SelectOption,
     TextChannel,
     utils,
 )
-from discord.ui import Button, Modal, TextInput, View, button, Select
-from .models import PanelModel, FormModel, FieldModel
+from discord.ui import Button, Modal, Select, TextInput, View, button
 
-from .history_html import HTML, message
-
-
-def export_html(file_name: str, messages: list[Message]) -> str:
-    if not file_name.endswith(".html"):
-        file_name = f"{file_name}.html"
-    file_name = path_join(getcwd(), file_name)
-    string = [
-        message.format(
-            m.created_at.strftime("%H:%M"),
-            m.author,
-            m.clean_content,
-        )
-        for m in messages
-    ]
-    with open(file_name, "w", encoding="utf-8") as f:
-        f.write(HTML.format("\n".join(string)))
-    return file_name
+from .models import FieldModel, FormModel, PanelModel
 
 
 class PanelEditModal(Modal, title="Edit a panel"):
@@ -377,25 +358,30 @@ class TicketView(View):
         #  Export chat history to a file
         if not isinstance((channel := interaction.channel), TextChannel):
             return
-        messages = [
-            message
-            async for message in channel.history(
-                limit=None,
-                oldest_first=True,
-            )
-        ]
-        file_name = "ticket"
-        file_name = export_html(file_name, messages)
+        transcript = await chat_exporter.export(channel=channel)
+        transcript_file = File(
+            BytesIO(transcript.encode()),
+            filename=f"transcript-{channel.name}.html",
+        )
         if guild := interaction.guild:
             channel = utils.get(guild.channels, name="ticket-info")
             if channel is None:
                 channel = await guild.create_text_channel("ticket-info")
-            if not isinstance(channel, TextChannel):
-                return
-            await channel.send(file=File(file_name))
-            await interaction.response.send_message(self.value)
 
-            remove(file_name)
+            transcript_channel = utils.get(guild.channels, name="transcripts")
+            if transcript_channel is None:
+                transcript_channel = await guild.create_text_channel(
+                    "transcripts",
+                    category=channel.category,
+                )
+            if isinstance(transcript_channel, TextChannel):
+                message = await transcript_channel.send(
+                    f"Transcript for {channel.mention}",
+                    file=transcript_file,
+                )
+                if isinstance(channel, TextChannel):
+                    await chat_exporter.quick_link(channel, message)
+
         #  Close the channel
         if isinstance(channel := interaction.channel, TextChannel):
             await channel.delete(reason="Ticket closed")
