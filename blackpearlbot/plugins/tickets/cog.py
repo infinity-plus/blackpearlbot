@@ -235,26 +235,6 @@ class Tickets(commands.GroupCog):
     )
 
     @field.command(
-        name="create",
-        description="Create a ticket field",
-    )
-    async def field_create(
-        self,
-        interaction: Interaction,
-        form_id: int,
-        name: str,
-    ):
-        await FieldModel.create(
-            form_id=form_id,
-            name=name,
-            response="",
-        )
-        await interaction.response.send_message(
-            f"Created field `{name}`",
-            ephemeral=True,
-        )
-
-    @field.command(
         name="delete",
         description="Delete a ticket field",
     )

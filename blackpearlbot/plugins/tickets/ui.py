@@ -211,6 +211,60 @@ class FormDelete(Select):
         )
 
 
+class FieldEditOption(View):
+    def __init__(self, form: FormModel, **kwargs):
+        super().__init__(**kwargs)
+        self.form = form
+
+    @button(label="Edit fields", style=ButtonStyle.green)
+    async def edit_fields(self, interaction: Interaction, button: Button):
+        self.stop()
+        await interaction.response.send_modal(FieldEdit(self.form))
+
+    @button(label="Cancel", style=ButtonStyle.red)
+    async def cancel(self, interaction: Interaction, button: Button):
+        self.stop()
+        await interaction.response.edit_message(
+            content="Cancelled",
+            view=None,
+        )
+
+
+class FieldEdit(Modal, title="Edit form fields"):
+    def __init__(self, form: FormModel) -> None:
+        super().__init__()
+        self.form = form
+        for field in form.fields:
+            self.add_item(
+                TextInput(
+                    label="Field 1",
+                    default=field.name,
+                    required=False,
+                )
+            )
+        if len(form.fields) < 5:
+            for i in range(len(form.fields), 5):
+                self.add_item(
+                    TextInput(
+                        label=f"Field {i + 1}",
+                        required=False,
+                    )
+                )
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        await interaction.response.send_message(
+            "Form updated",
+            ephemeral=True,
+        )
+        await FieldModel.delete_all(form_id=self.form.id)  # type: ignore
+        for i in range(len(self.children)):
+            if name := self.children[i].value:  # type: ignore
+                await FieldModel.create(
+                    form_id=self.form.id,  # type: ignore
+                    name=name,
+                )
+
+
 class FormEdit(Modal, title="Edit form"):
     def __init__(self, form: FormModel) -> None:
         super().__init__()
@@ -239,8 +293,9 @@ class FormEdit(Modal, title="Edit form"):
             description=description or self.form.description,
         )
         await interaction.response.send_message(
-            "Form edited",
+            "Form updated. Do you want to edit fields?",
             ephemeral=True,
+            view=FieldEditOption(self.form),
         )
 
 
